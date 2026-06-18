@@ -251,6 +251,43 @@ export function updatePartnerAccess(
   };
 }
 
+export function updatePartnerPassword(id: string, passwordHash: string): PartnerAdminRow | null {
+  const store = load();
+  const p = store.partners.find((x) => x.id === id);
+  if (!p) return null;
+  p.password_hash = passwordHash;
+  save(store);
+  return {
+    id: p.id,
+    email: p.email,
+    name: p.name,
+    created_at: p.created_at,
+    role: normalizeRole(p),
+    allowed_features: p.allowed_features == null ? null : [...p.allowed_features],
+    allowed_material_ids:
+      p.allowed_material_ids == null ? null : [...p.allowed_material_ids],
+  };
+}
+
+export function deletePartner(id: string): PartnerAdminRow | null {
+  const store = load();
+  const idx = store.partners.findIndex((x) => x.id === id);
+  if (idx < 0) return null;
+  const [p] = store.partners.splice(idx, 1);
+  store.material_access = store.material_access.filter((x) => x.partner_id !== id);
+  save(store);
+  return {
+    id: p.id,
+    email: p.email,
+    name: p.name,
+    created_at: p.created_at,
+    role: normalizeRole(p),
+    allowed_features: p.allowed_features == null ? null : [...p.allowed_features],
+    allowed_material_ids:
+      p.allowed_material_ids == null ? null : [...p.allowed_material_ids],
+  };
+}
+
 export function hasAccessToMaterial(partnerId: string, materialId: string): boolean {
   const p = getPartnerRecord(partnerId);
   if (!p) return false;

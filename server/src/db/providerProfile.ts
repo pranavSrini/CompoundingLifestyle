@@ -116,3 +116,11 @@ export function upsertProviderProfile(partnerId: string, input: Partial<Provider
   saveStore(store);
   return merged;
 }
+
+export function deleteProviderProfile(partnerId: string): void {
+  const store = loadStore();
+  if (store[partnerId]) {
+    delete store[partnerId];
+    saveStore(store);
+  }
+}

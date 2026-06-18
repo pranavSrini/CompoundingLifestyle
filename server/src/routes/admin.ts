@@ -3,7 +3,16 @@ import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 import { requireAuth } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/requireFeature.js';
-import { createPartner, getPartnerByEmail, listPartnersForAdmin, updatePartnerAccess, type Role } from '../db/index.js';
+import {
+  createPartner,
+  deletePartner,
+  getPartnerByEmail,
+  listPartnersForAdmin,
+  updatePartnerAccess,
+  updatePartnerPassword,
+  type Role,
+} from '../db/index.js';
+import { deleteProviderProfile } from '../db/providerProfile.js';
 import { config } from '../config.js';
 import { ALL_FEATURES, FEATURE_LABELS, isValidFeatureKey } from '../features.js';
 import { getMaterialCatalog } from '../materialCatalog.js';
@@ -73,6 +82,30 @@ router.post('/partners', async (req: Request, res: Response) => {
   res.status(201).json({ partner });
 });
 
+router.patch('/partners/:id/password', async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const body = req.body as { password?: string };
+  const password = body.password?.trim();
+  const partner = listPartnersForAdmin().find((p) => p.id === id);
+
+  if (!partner) {
+    res.status(404).json({ error: 'Partner not found' });
+    return;
+  }
+  if (partner.role === 'admin') {
+    res.status(400).json({ error: 'Admin passwords cannot be reset here' });
+    return;
+  }
+  if (!password || password.length < 8) {
+    res.status(400).json({ error: 'Password must be at least 8 characters' });
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(password, config.bcryptRounds);
+  const updated = updatePartnerPassword(id, passwordHash);
+  res.json({ partner: updated });
+});
+
 router.patch('/partners/:id', (req: Request, res: Response) => {
   const id = req.params.id;
   const body = req.body as {
@@ -132,6 +165,29 @@ router.patch('/partners/:id', (req: Request, res: Response) => {
     return;
   }
   res.json({ partner: row });
+});
+
+router.delete('/partners/:id', (req: Request, res: Response) => {
+  const id = req.params.id;
+  const partners = listPartnersForAdmin();
+  const partner = partners.find((p) => p.id === id);
+
+  if (!partner) {
+    res.status(404).json({ error: 'Partner not found' });
+    return;
+  }
+  if (req.partnerId === id) {
+    res.status(400).json({ error: 'You cannot delete your own account while signed in' });
+    return;
+  }
+  if (partner.role === 'admin' && partners.filter((p) => p.role === 'admin').length <= 1) {
+    res.status(400).json({ error: 'Cannot delete the last admin account' });
+    return;
+  }
+
+  const deleted = deletePartner(id);
+  deleteProviderProfile(id);
+  res.json({ partner: deleted });
 });
 
 router.get('/features', (_req: Request, res: Response) => {
