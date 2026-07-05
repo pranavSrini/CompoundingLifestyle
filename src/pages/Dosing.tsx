@@ -1,64 +1,15 @@
-import { useEffect, useState } from 'react';
-import MaterialCard from '../components/MaterialCard';
-import { fetchDosingGuides, openMaterialFileInNewTab, type DosingGuideItem } from '../lib/api';
-import './PageLayout.css';
+import EditableMaterialManager from '../components/EditableMaterialManager';
 
 export default function Dosing() {
-  const [items, setItems] = useState<DosingGuideItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await fetchDosingGuides();
-        if (!cancelled) setItems(data);
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   return (
-    <div className="page-layout">
-      <header className="page-header">
-        <h1>Dosing Guides</h1>
-        <p className="page-subtitle">Dosing schedules and administration guidelines for key products.</p>
-      </header>
-
-      {loading && <p className="page-subtitle">Loading…</p>}
-      {error && (
-        <p className="page-subtitle" role="alert" style={{ color: '#b91c1c' }}>
-          {error}
-        </p>
-      )}
-      {!loading && !error && items.length === 0 && (
-        <p className="page-subtitle">No dosing guides are enabled for your account.</p>
-      )}
-      {!loading && !error && items.length > 0 && (
-        <div className="material-grid">
-          {items.map((item) => (
-            <MaterialCard
-              key={item.id}
-              title={item.title}
-              fileType={item.fileType}
-              onView={() => {
-                void openMaterialFileInNewTab(item.id).catch((e) => {
-                  window.alert(e instanceof Error ? e.message : 'Could not open file');
-                });
-              }}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+    <EditableMaterialManager
+      feature="dosing"
+      title="Dosing Guides"
+      subtitle="Dosing schedules and administration guidelines for key products."
+      emptyText="No dosing guides are enabled for your account."
+      uploadTitle="Upload dosing guide"
+      categoryPlaceholder="dosing"
+      defaultCategory="dosing"
+    />
   );
 }

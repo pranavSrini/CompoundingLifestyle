@@ -48,6 +48,24 @@ export interface CatalogPricingItem {
   category: string;
   fileType: string;
   description?: string;
+  fileName?: string;
+}
+
+export type EditableMaterialFeature =
+  | 'catalog_pricing'
+  | 'state_licenses'
+  | 'dosing'
+  | 'coas'
+  | 'patient_education';
+
+export interface EditableMaterialItem {
+  id: string;
+  feature: EditableMaterialFeature;
+  title: string;
+  category: string;
+  fileType: string;
+  fileName: string;
+  description?: string;
 }
 
 export async function fetchCatalogAndPricing(): Promise<CatalogPricingItem[]> {
@@ -66,6 +84,8 @@ export interface DosingGuideItem {
   title: string;
   category: string;
   fileType: string;
+  fileName?: string;
+  description?: string;
 }
 
 export async function fetchDosingGuides(): Promise<DosingGuideItem[]> {
@@ -84,6 +104,8 @@ export interface CoAItem {
   title: string;
   category: string;
   fileType: string;
+  fileName?: string;
+  description?: string;
 }
 
 export async function fetchCoas(): Promise<CoAItem[]> {
@@ -102,6 +124,7 @@ export interface StateLicenseItem {
   title: string;
   category: string;
   fileType: string;
+  fileName?: string;
   description?: string;
 }
 
@@ -214,6 +237,58 @@ export async function updateMonograph(id: string, formData: FormData): Promise<M
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'Update failed');
   return data;
+}
+
+export async function fetchEditableMaterials(feature: EditableMaterialFeature): Promise<EditableMaterialItem[]> {
+  const token = getToken();
+  if (!token) throw new Error('Not authenticated');
+  const res = await fetch(`${API_BASE}/materials/editable/${feature}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Failed to load materials');
+  return data.materials ?? [];
+}
+
+export async function uploadEditableMaterial(
+  feature: EditableMaterialFeature,
+  formData: FormData,
+): Promise<EditableMaterialItem> {
+  const token = getToken();
+  if (!token) throw new Error('Not authenticated');
+  const res = await fetch(`${API_BASE}/materials/editable/${feature}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Upload failed');
+  return data.material;
+}
+
+export async function updateEditableMaterial(id: string, formData: FormData): Promise<EditableMaterialItem> {
+  const token = getToken();
+  if (!token) throw new Error('Not authenticated');
+  const res = await fetch(`${API_BASE}/materials/editable/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Update failed');
+  return data.material;
+}
+
+export async function deleteEditableMaterial(id: string): Promise<EditableMaterialItem> {
+  const token = getToken();
+  if (!token) throw new Error('Not authenticated');
+  const res = await fetch(`${API_BASE}/materials/editable/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Delete failed');
+  return data.material;
 }
 
 /** Fetches monograph cover image with Authorization; caller must revokeObjectURL when done */
@@ -367,6 +442,31 @@ export async function patchAdminPartner(
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'Update failed');
+  return data.partner as AdminPartnerRow;
+}
+
+export async function resetAdminPartnerPassword(id: string, password: string): Promise<AdminPartnerRow> {
+  const token = getToken();
+  if (!token) throw new Error('Not authenticated');
+  const res = await fetch(`${API_BASE}/admin/partners/${encodeURIComponent(id)}/password`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Password reset failed');
+  return data.partner as AdminPartnerRow;
+}
+
+export async function deleteAdminPartner(id: string): Promise<AdminPartnerRow> {
+  const token = getToken();
+  if (!token) throw new Error('Not authenticated');
+  const res = await fetch(`${API_BASE}/admin/partners/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Delete account failed');
   return data.partner as AdminPartnerRow;
 }
 

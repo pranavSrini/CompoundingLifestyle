@@ -366,3 +366,16 @@
   padding: 0.625rem 1.25rem;
   font-size: 0.9375rem;
 }
+
+.modal-footer .material-delete-btn {
+  margin-right: auto;
+  color: #b91c1c;
+  border-color: #fecaca;
+  background: #fff5f5;
+}
+
+.modal-footer .material-delete-btn:hover {
+  color: #fff;
+  border-color: #b91c1c;
+  background: #b91c1c;
+}

@@ -1,4 +1,5 @@
 import { loadMonographs } from './db/monographs.js';
+import { listMaterialsByFeature } from './db/materialLibrary.js';
 import type { FeatureKey } from './features.js';
 import { FEATURE_LABELS } from './features.js';
 
@@ -14,13 +15,7 @@ export function getMaterialCatalog(): CatalogGroup[] {
     {
       feature: 'catalog_pricing',
       featureLabel: FEATURE_LABELS.catalog_pricing,
-      items: [
-        { id: 'cat-2', label: 'Spring 2026 Catalog' },
-        { id: 'cat-6', label: 'Peptides' },
-        { id: 'price-1', label: 'Volume Pricing Sheet Spring 2026' },
-        { id: 'price-2', label: 'Product Descriptions' },
-        { id: 'price-3', label: 'Product Blurbs' },
-      ],
+      items: listMaterialsByFeature('catalog_pricing').map((m) => ({ id: m.id, label: m.title })),
     },
     {
       feature: 'clinical_education',
@@ -30,64 +25,22 @@ export function getMaterialCatalog(): CatalogGroup[] {
     {
       feature: 'state_licenses',
       featureLabel: FEATURE_LABELS.state_licenses,
-      items: [
-        { id: 'license-ak', label: 'Alaska' },
-        { id: 'license-az', label: 'Arizona' },
-        { id: 'license-co', label: 'Colorado' },
-        { id: 'license-ct', label: 'Connecticut' },
-        { id: 'license-de', label: 'Delaware' },
-        { id: 'license-fl', label: 'Florida' },
-        { id: 'license-hi', label: 'Hawaii' },
-        { id: 'license-id', label: 'Idaho' },
-        { id: 'license-il', label: 'Illinois' },
-        { id: 'license-me', label: 'Maine' },
-        { id: 'license-nh', label: 'New Hampshire' },
-        { id: 'license-nm', label: 'New Mexico' },
-        { id: 'license-ny', label: 'New York' },
-        { id: 'license-oh', label: 'Ohio' },
-        { id: 'license-ri', label: 'Rhode Island' },
-        { id: 'license-ut', label: 'Utah' },
-        { id: 'license-wi', label: 'Wisconsin' },
-        { id: 'license-wy', label: 'Wyoming' },
-      ],
+      items: listMaterialsByFeature('state_licenses').map((m) => ({ id: m.id, label: m.title })),
     },
     {
       feature: 'dosing',
       featureLabel: FEATURE_LABELS.dosing,
-      items: [
-        { id: 'dose-1', label: 'B6 Tirz Dosing Guide' },
-        { id: 'dose-2', label: 'Semaglutide L-Carnitine Dosing' },
-      ],
+      items: listMaterialsByFeature('dosing').map((m) => ({ id: m.id, label: m.title })),
     },
     {
       feature: 'coas',
       featureLabel: FEATURE_LABELS.coas,
-      items: [
-        { id: 'coa-1', label: 'Tirzepatide COA' },
-        { id: 'coa-2', label: 'Semaglutide COA' },
-        { id: 'coa-3', label: 'Sema L-Carnitine COA' },
-        { id: 'coa-4', label: 'Tirz B6 Validation' },
-        { id: 'coa-5', label: 'Tirzepatide Analysis' },
-      ],
+      items: listMaterialsByFeature('coas').map((m) => ({ id: m.id, label: m.title })),
     },
     {
       feature: 'patient_education',
       featureLabel: FEATURE_LABELS.patient_education,
-      items: [
-        { id: 'brochure-1', label: 'GHK-Cu Brochure' },
-        { id: 'brochure-2', label: 'Patient NAD Brochure' },
-        { id: 'pe-1', label: 'GLP-1 / GIP Differences' },
-        { id: 'pe-2', label: 'Semaglutide' },
-        { id: 'pe-3', label: 'Tirzepatide' },
-        { id: 'pe-4', label: 'Dulaglutide' },
-        { id: 'pe-5', label: 'Male HRT' },
-        { id: 'pe-6', label: 'Female HRT' },
-        { id: 'pe-7', label: 'Sexual Health' },
-        { id: 'pe-8', label: 'B12 Shots vs Lipo-MIC' },
-        { id: 'pe-9', label: 'MIC Lipotropic Injections' },
-        { id: 'pe-10', label: 'Infusion Pamphlet' },
-        { id: 'pe-11', label: 'Med Fact Sheets' },
-      ],
+      items: listMaterialsByFeature('patient_education').map((m) => ({ id: m.id, label: m.title })),
     },
     {
       feature: 'products',

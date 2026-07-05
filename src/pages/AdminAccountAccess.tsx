@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import {
+  deleteAdminPartner,
   fetchAdminPartners,
   fetchAdminFeatureList,
   fetchAdminMaterialCatalog,
   patchAdminPartner,
+  resetAdminPartnerPassword,
   type AdminPartnerRow,
   type MaterialCatalogGroup,
   type PartnerRole,
@@ -17,6 +19,7 @@ import './Admin.css';
 
 export default function AdminAccountAccess() {
   const { partnerId } = useParams<{ partnerId: string }>();
+  const navigate = useNavigate();
   const [row, setRow] = useState<AdminPartnerRow | null>(null);
   const [featureDefs, setFeatureDefs] = useState<{ key: string; label: string }[]>([]);
   const [catalog, setCatalog] = useState<MaterialCatalogGroup[]>([]);
@@ -24,6 +27,10 @@ export default function AdminAccountAccess() {
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
+  const [resettingPassword, setResettingPassword] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!partnerId) {
@@ -79,6 +86,7 @@ export default function AdminAccountAccess() {
     if (!row) return;
     setSaving(true);
     setError(null);
+    setPasswordStatus(null);
     try {
       const updated = await patchAdminPartner(row.id, body);
       setRow(updated);
@@ -86,6 +94,39 @@ export default function AdminAccountAccess() {
       setError(e instanceof Error ? e.message : 'Save failed');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function onPasswordReset(e: React.FormEvent) {
+    e.preventDefault();
+    if (!row) return;
+    setResettingPassword(true);
+    setError(null);
+    setPasswordStatus(null);
+    try {
+      await resetAdminPartnerPassword(row.id, password);
+      setPassword('');
+      setPasswordStatus('Password reset. Share the temporary password with the user securely.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Password reset failed');
+    } finally {
+      setResettingPassword(false);
+    }
+  }
+
+  async function onDeleteAccount() {
+    if (!row) return;
+    const ok = window.confirm(`Delete ${row.email}? This removes the account and provider profile data.`);
+    if (!ok) return;
+    setDeleting(true);
+    setError(null);
+    setPasswordStatus(null);
+    try {
+      await deleteAdminPartner(row.id);
+      navigate('/admin', { replace: true });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Delete account failed');
+      setDeleting(false);
     }
   }
 
@@ -186,6 +227,59 @@ export default function AdminAccountAccess() {
               Adjust this account&apos;s role, which portal sections they see, and optionally hide specific downloads.
             </p>
           </header>
+
+          <section className="admin-management-grid">
+            <form className="admin-action-card" onSubmit={onPasswordReset}>
+              <div>
+                <h2>Reset password</h2>
+                <p>
+                  Set a temporary password for provider and sales rep accounts. Admin passwords are managed outside this
+                  reset flow.
+                </p>
+              </div>
+              {passwordStatus && (
+                <div className="admin-success" role="status">
+                  {passwordStatus}
+                </div>
+              )}
+              <label>
+                Temporary password
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  minLength={8}
+                  disabled={row.role === 'admin' || resettingPassword || saving || deleting}
+                  required
+                />
+              </label>
+              <button
+                type="submit"
+                className="admin-primary-button"
+                disabled={row.role === 'admin' || resettingPassword || saving || deleting}
+              >
+                {resettingPassword ? 'Resetting…' : 'Reset password'}
+              </button>
+            </form>
+
+            <section className="admin-action-card admin-action-card--danger">
+              <div>
+                <h2>Delete account</h2>
+                <p>
+                  Remove this account and its provider profile data when it will no longer be used. This cannot be
+                  undone.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="admin-danger-button"
+                disabled={saving || resettingPassword || deleting}
+                onClick={onDeleteAccount}
+              >
+                {deleting ? 'Deleting…' : 'Delete account'}
+              </button>
+            </section>
+          </section>
 
           <section className={`admin-partner-card admin-detail-shell${saving ? ' admin-partner-card--saving' : ''}`}>
             <div className="admin-partner-card-head admin-detail-card-head">
